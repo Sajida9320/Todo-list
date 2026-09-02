@@ -14,13 +14,14 @@ type Idea = {
   created_at: string;
 };
 
-const CATEGORIES = ["Product", "Engineering", "Process", "Culture", "Other"];
+const CATEGORIES = ["Product", "Engineering", "Process", "Culture", "Finance", "Other"];
 
 const CATEGORY_STYLES: Record<string, string> = {
   Product: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   Engineering: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400",
   Process: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
   Culture: "bg-pink-500/10 text-pink-700 dark:text-pink-400",
+  Finance: "bg-green-500/10 text-green-700 dark:text-green-400",
   Other: "bg-slate-500/10 text-slate-700 dark:text-slate-400",
 };
 
