@@ -8,10 +8,32 @@ type Idea = {
   title: string;
   description: string;
   category: string;
+  author: string;
+  votes: number;
+  status: string;
   created_at: string;
 };
 
 const CATEGORIES = ["Product", "Engineering", "Process", "Culture", "Other"];
+
+const CATEGORY_STYLES: Record<string, string> = {
+  Product: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  Engineering: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+  Process: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
+  Culture: "bg-pink-500/10 text-pink-700 dark:text-pink-400",
+  Other: "bg-slate-500/10 text-slate-700 dark:text-slate-400",
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  New: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
+  "Under review": "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  Approved: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  Rejected: "bg-red-500/10 text-red-700 dark:text-red-400",
+};
+
+const inputClasses =
+  "rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-indigo-500";
+const labelClasses = "text-xs font-medium uppercase tracking-wide text-muted";
 
 export default function IdeaBoard() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -21,6 +43,7 @@ export default function IdeaBoard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [author, setAuthor] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState<string>("All");
@@ -29,7 +52,7 @@ export default function IdeaBoard() {
     async function loadIdeas() {
       const { data, error } = await supabase
         .from("ideas")
-        .select("id, title, description, category, created_at")
+        .select("id, title, description, category, author, votes, status, created_at")
         .order("created_at", { ascending: false });
 
       if (error) setError(error.message);
@@ -46,10 +69,16 @@ export default function IdeaBoard() {
     if (!trimmedTitle || !trimmedDescription) return;
 
     setSubmitting(true);
+    const trimmedAuthor = author.trim();
     const { data, error } = await supabase
       .from("ideas")
-      .insert({ title: trimmedTitle, description: trimmedDescription, category })
-      .select("id, title, description, category, created_at")
+      .insert({
+        title: trimmedTitle,
+        description: trimmedDescription,
+        category,
+        ...(trimmedAuthor && { author: trimmedAuthor }),
+      })
+      .select("id, title, description, category, author, votes, status, created_at")
       .single();
     setSubmitting(false);
 
@@ -61,101 +90,182 @@ export default function IdeaBoard() {
     setTitle("");
     setDescription("");
     setCategory(CATEGORIES[0]);
+    setAuthor("");
+  }
+
+  async function upvote(id: number, currentVotes: number) {
+    setIdeas((prev) =>
+      prev.map((idea) => (idea.id === id ? { ...idea, votes: currentVotes + 1 } : idea))
+    );
+
+    const { error } = await supabase
+      .from("ideas")
+      .update({ votes: currentVotes + 1 })
+      .eq("id", id);
+
+    if (error) {
+      setError(error.message);
+      setIdeas((prev) =>
+        prev.map((idea) => (idea.id === id ? { ...idea, votes: currentVotes } : idea))
+      );
+    }
   }
 
   const visibleIdeas =
     activeFilter === "All" ? ideas : ideas.filter((idea) => idea.category === activeFilter);
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-6 text-center">Idea Bank</h1>
-
+    <div className="flex flex-col gap-10">
       {error && (
-        <p className="mb-4 text-sm text-red-600 dark:text-red-400 text-center">{error}</p>
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
       )}
 
       <form
         onSubmit={addIdea}
-        className="flex flex-col gap-3 mb-8 rounded-md border border-black/10 dark:border-white/20 p-4"
+        className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-sm"
       >
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Idea title"
-          className="rounded-md border border-black/10 dark:border-white/20 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Short description"
-          rows={3}
-          className="rounded-md border border-black/10 dark:border-white/20 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        />
-        <div className="flex gap-2">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="rounded-md border border-black/10 dark:border-white/20 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex-1 rounded-md bg-blue-600 text-white px-4 py-2 font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-          >
-            {submitting ? "Submitting..." : "Submit idea"}
-          </button>
+        <div>
+          <h2 className="text-base font-semibold">Submit an idea</h2>
+          <p className="text-sm text-muted">Share something that could help the team.</p>
         </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClasses}>Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Give your idea a short title"
+            className={inputClasses}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClasses}>Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="What's the idea, and why does it matter?"
+            rows={3}
+            className={`${inputClasses} resize-none`}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClasses}>Your name</label>
+            <input
+              type="text"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Optional"
+              className={inputClasses}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClasses}>Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={inputClasses}
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="self-end rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {submitting ? "Submitting..." : "Submit idea"}
+        </button>
       </form>
 
-      <div className="flex flex-wrap gap-2 mb-6 justify-center">
-        {["All", ...CATEGORIES].map((c) => (
-          <button
-            key={c}
-            onClick={() => setActiveFilter(c)}
-            className={`rounded-full px-3 py-1 text-sm border transition-colors ${
-              activeFilter === c
-                ? "bg-blue-600 text-white border-blue-600"
-                : "border-black/10 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/10"
-            }`}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-
-      {loading ? (
-        <p className="text-center text-sm text-black/50 dark:text-white/50">Loading...</p>
-      ) : visibleIdeas.length === 0 ? (
-        <p className="text-center text-sm text-black/50 dark:text-white/50">
-          No ideas yet. Be the first to submit one.
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {visibleIdeas.map((idea) => (
-            <div
-              key={idea.id}
-              className="flex flex-col gap-2 rounded-md border border-black/10 dark:border-white/20 p-4"
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap gap-2">
+          {["All", ...CATEGORIES].map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveFilter(c)}
+              className={`rounded-full px-3 py-1 text-sm font-medium border transition-colors ${
+                activeFilter === c
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "border-border text-muted hover:bg-black/5 dark:hover:bg-white/10"
+              }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="font-medium break-words">{idea.title}</h2>
-                <span className="shrink-0 rounded-full bg-black/5 dark:bg-white/10 px-2 py-0.5 text-xs">
-                  {idea.category}
-                </span>
-              </div>
-              <p className="text-sm text-black/70 dark:text-white/70 break-words">
-                {idea.description}
-              </p>
-            </div>
+              {c}
+            </button>
           ))}
         </div>
-      )}
+
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="h-32 animate-pulse rounded-xl border border-border bg-surface"
+              />
+            ))}
+          </div>
+        ) : visibleIdeas.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border py-12 text-center">
+            <p className="text-sm text-muted">No ideas yet. Be the first to submit one.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {visibleIdeas.map((idea) => (
+              <div
+                key={idea.id}
+                className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-medium leading-snug break-words">{idea.title}</h3>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      CATEGORY_STYLES[idea.category] ?? CATEGORY_STYLES.Other
+                    }`}
+                  >
+                    {idea.category}
+                  </span>
+                </div>
+
+                <p className="text-sm text-muted break-words">{idea.description}</p>
+
+                <div className="mt-1 flex items-center justify-between gap-2 border-t border-border pt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600/10 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                      {idea.author.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-xs text-muted">{idea.author}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        STATUS_STYLES[idea.status] ?? STATUS_STYLES.New
+                      }`}
+                    >
+                      {idea.status}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => upvote(idea.id, idea.votes)}
+                    className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                  >
+                    <span className="text-indigo-600 dark:text-indigo-400">▲</span>
+                    {idea.votes}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
