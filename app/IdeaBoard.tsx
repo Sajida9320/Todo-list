@@ -18,7 +18,7 @@ const CATEGORIES = ["Product", "Engineering", "Process", "Culture", "Other"];
 
 const CATEGORY_STYLES: Record<string, string> = {
   Product: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  Engineering: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+  Engineering: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400",
   Process: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
   Culture: "bg-pink-500/10 text-pink-700 dark:text-pink-400",
   Other: "bg-slate-500/10 text-slate-700 dark:text-slate-400",
@@ -32,7 +32,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const inputClasses =
-  "rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-indigo-500";
+  "rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-purple-500";
 const labelClasses = "text-xs font-medium uppercase tracking-wide text-muted";
 
 export default function IdeaBoard() {
@@ -183,7 +183,7 @@ export default function IdeaBoard() {
         <button
           type="submit"
           disabled={submitting}
-          className="self-end rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
+          className="self-end rounded-lg bg-purple-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-purple-700 disabled:opacity-50"
         >
           {submitting ? "Submitting..." : "Submit idea"}
         </button>
@@ -197,7 +197,7 @@ export default function IdeaBoard() {
               onClick={() => setActiveFilter(c)}
               className={`rounded-full px-3 py-1 text-sm font-medium border transition-colors ${
                 activeFilter === c
-                  ? "bg-indigo-600 text-white border-indigo-600"
+                  ? "bg-purple-600 text-white border-purple-600"
                   : "border-border text-muted hover:bg-black/5 dark:hover:bg-white/10"
               }`}
             >
@@ -241,7 +241,7 @@ export default function IdeaBoard() {
 
                 <div className="mt-1 flex items-center justify-between gap-2 border-t border-border pt-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600/10 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-600/10 text-xs font-medium text-purple-600 dark:text-purple-400">
                       {idea.author.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-xs text-muted">{idea.author}</span>
@@ -257,7 +257,7 @@ export default function IdeaBoard() {
                     onClick={() => upvote(idea.id, idea.votes)}
                     className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10"
                   >
-                    <span className="text-indigo-600 dark:text-indigo-400">▲</span>
+                    <span className="text-purple-600 dark:text-purple-400">▲</span>
                     {idea.votes}
                   </button>
                 </div>
